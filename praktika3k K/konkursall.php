@@ -7,9 +7,11 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
+// --- ПОЛУЧАЕМ ПАРАМЕТРЫ СОРТИРОВКИ И ПОИСКА ---
 $sort = $_GET['sort'] ?? 'date_asc';
 $search = trim($_GET['search'] ?? '');
 
+// Белый список сортировок
 $allowedSorts = [
     'date_asc'   => ['field' => 'date_k',     'order' => 'ASC'],
     'date_desc'  => ['field' => 'date_k',     'order' => 'DESC'],
@@ -23,8 +25,9 @@ if (!isset($allowedSorts[$sort])) {
 }
 $orderBy = $allowedSorts[$sort]['field'] . ' ' . $allowedSorts[$sort]['order'];
 
+// --- ФОРМИРУЕМ ЗАПРОС С ПОИСКОМ ---
 if (!empty($search)) {
-   
+    // Поиск по названию (частичное совпадение, без учёта регистра)
     $stmt = $mysqli->prepare("SELECT * FROM konkurs WHERE title LIKE CONCAT('%', ?, '%') ORDER BY $orderBy");
     $stmt->bind_param('s', $search);
     $stmt->execute();
@@ -54,8 +57,10 @@ if (!$result) {
     <div class="header">
         <h1>🏆 Конкурсы и мероприятия</h1>
         <a href="+konkurs.php" class="btn-add">➕ Добавить конкурс</a>
+        <a href="export_konkurs.php" class="btn-export">📎 Выгрузить отчёт</a>
     </div>
 
+    <!-- Блок поиска и сортировки -->
     <div class="search-sort-panel">
         <form method="get" action="" id="filterForm">
             <div class="search-wrap">
@@ -86,7 +91,7 @@ if (!$result) {
         <div class="grid">
             <?php while ($contest = $result->fetch_assoc()): ?>
                 <?php
-              
+                // Получаем файлы для текущего конкурса
                 $stmt = $mysqli->prepare("SELECT * FROM file_konkurs WHERE key_id = ?");
                 $stmt->bind_param('i', $contest['id']);
                 $stmt->execute();
